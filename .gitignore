@@ -16,6 +16,8 @@ output/
 *.sqlite
 *.sqlite3
 certificates.db
+*.pdf
+*.zip
 
 # OS / editor
 .DS_Store

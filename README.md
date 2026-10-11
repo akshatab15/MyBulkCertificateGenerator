@@ -72,11 +72,12 @@ MyBulkCertificateGenerator/
 │       ├── health.py      # GET /health
 │       ├── jobs.py        # /jobs endpoints
 │       └── certificates.py# /certificates endpoints + preview
-├── tests/                 # Pytest suite (44 tests)
+├── tests/                 # Pytest suite (58 tests)
 ├── examples/
 │   └── recipients_sample.csv
 ├── requirements.txt
 ├── pytest.ini
+├── .python-version        # Pins Python 3.13 for Render
 ├── .env.example
 ├── .gitignore
 └── README.md
@@ -153,7 +154,7 @@ Customisable fields (all optional, with defaults): `title`, `description`,
 styling options - not a multi-template editor.
 
 The palette was derived from the reference image (navy `#051a2a`, gold
-`#b78d2f`, light gold `#e2cfa5`, off-white `#f3f1ec`).
+`#c5a04a`, light gold `#e8d7ab`, off-white `#f3f1ec`).
 
 ---
 
@@ -301,10 +302,12 @@ redesign: custom title/description/colour/signature fields, the emblem toggle,
 the preview endpoint, optional CSV design columns, and the legacy-DB
 migration. It also verifies that the configured
 `CERTIFICATE_VERIFY_BASE_URL` is what gets embedded in each certificate's QR
-code. Each test runs against a temporary SQLite database and a temporary
-output directory, so **no real user data is touched**.
+code, and that the cross-platform font fallback never raises when the Windows
+fonts are unavailable (e.g. on Render's Linux runtime). Each test runs against
+a temporary SQLite database and a temporary output directory, so **no real user
+data is touched**.
 
-Current result: **55 passed**.
+Current result: **58 passed**.
 
 ---
 
@@ -351,3 +354,42 @@ Jobs run via FastAPI `BackgroundTasks`, i.e. **in the same process** as the API.
 
 Per the assignment, there is **no template editor and no multiple certificate
 designs** — a single predefined template is used.
+
+---
+
+## 11. Deployment (Render)
+
+The app is a standard ASGI service; it deploys to Render's **native Python**
+runtime with no Docker or extra files.
+
+| Setting | Value |
+| ------- | ----- |
+| Runtime | Python (native) |
+| Build command | `pip install -r requirements.txt` |
+| Start command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
+| Health check path | `/health` |
+| Python version | **3.13** (pinned via the committed `.python-version`) |
+
+**Why the Python pin matters.** Render defaults newly created services to the
+newest Python release (3.14), but the pinned dependencies — `pydantic-core`,
+`uvloop`, `httptools` and `watchfiles` — only ship prebuilt wheels up to
+CPython **3.13**. On 3.14, `pip` falls back to compiling `pydantic-core` from
+source with Rust, which fails in Render's build sandbox. The committed
+`.python-version` file keeps every dependency on a prebuilt wheel. (Render does
+**not** support `runtime.txt`; use `.python-version` or the `PYTHON_VERSION`
+environment variable instead.)
+
+**Required environment variable:**
+
+```
+CERTIFICATE_VERIFY_BASE_URL=https://mybulkcertificategenerator.onrender.com
+```
+
+so the QR code on each certificate points at the deployed API instead of
+`localhost`.
+
+> **Ephemeral storage.** Render's native runtime has an ephemeral filesystem:
+> the SQLite database and the `output/` PDFs/ZIPs are reset on every
+> deploy/restart. For durable data, point `DATABASE_URL` at a managed Postgres
+> instance and store generated files in an object store. The background-task
+> caveats in section 9 also apply.
