@@ -1,0 +1,21 @@
+# Core web framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# Database / ORM
+SQLAlchemy==2.0.36
+
+# Validation
+pydantic==2.10.4
+email-validator==2.2.0
+
+# PDF generation + QR codes
+reportlab==4.2.5
+qrcode[pil]==8.0
+
+# File uploads (CSV)
+python-multipart==0.0.20
+
+# Testing
+pytest==8.3.4
+httpx==0.28.1
