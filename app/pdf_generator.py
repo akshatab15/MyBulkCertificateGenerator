@@ -145,7 +145,7 @@ def _ensure_fonts() -> None:
                 "CertTimesBoldItalic",
             )
             return
-        is_windows_paths = [Path(p.replace("/", "\\")) for p in paths]
+        is_windows_paths = [Path(str(p).replace("/", "\\")) for p in paths]
         if all(p.is_file() for p in is_windows_paths):
             pdfmetrics.registerFont(TTFont("CertTimesRoman", str(is_windows_paths[0])))
             pdfmetrics.registerFont(TTFont("CertTimesBold", str(is_windows_paths[1])))
